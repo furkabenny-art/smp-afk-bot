@@ -1,83 +1,72 @@
 const mineflayer = require('mineflayer');
 
-// ГЛОБАЛЬНАЯ ЗАЩИТА: Теперь хостинг не упадет из-за неизвестных пакетов чата 1.21.1
+// ЗАЩИТА ОТ КРАША: игнорируем битые пакеты чата 1.21.1
 process.on('uncaughtException', (err) => {
   if (err.message.includes('unknown chat format code')) {
-    console.log('Был заблокирован кривой JSON-пакет чата от AuthMe/Purpur.');
+    // Тихо игнорируем ошибку формата чата от Purpur/Paper
   } else {
-    console.error('Критическая ошибка (перехвачена):', err);
+    console.error('Критическая ошибка:', err);
   }
 });
 
-// Настройки подключения (ИЗМЕНЕН IP)
+// Настройки подключения (Адаптировано под одиночный мир)
 const botOptions = {
-  host: 'litesnp.mcsh.io',
+  host: 'litesmp.mcsh.io',
   port: 25565,
   username: 'Bot240',
   version: '1.21.1',
-  hideErrors: true
+  hideErrors: true,
+  physicsEnabled: false, // Отключаем физику до регистрации, чтобы сервер не кикал за рассинхрон
+  viewDistance: 'tiny'   // Минимальная прорисовка для экономии ОЗУ на bot-hosting.com
 };
 
 function startBot() {
   const bot = mineflayer.createBot(botOptions);
+  let isRegistered = false;
 
-  // Флаг, чтобы бот не регистрировался повторно во время одной сессии
-  let isAuthorized = false;
-
-  // Блокируем кэш чанков плагина Chunky, чтобы экономить ОЗУ
+  // Очистка чанков для жесткой экономии ОЗУ
   bot.on('inject_allowed', () => {
     if (bot.world && bot.world.getColumns) {
       bot.world.getColumns = () => [];
     }
   });
 
-  // Умная регистрация и авторизация через отслеживание строк чата
+  // Моментальная реакция на чат регистрации
   bot.on('messagestr', (message) => {
-    // Если сервер просит зарегистрироваться
     if (message.includes('/reg') || message.includes('зарегистрируйтесь') || message.includes('register')) {
-      if (!isAuthorized) {
-        isAuthorized = true;
-        console.log('AuthMe запросил регистрацию. Регистрируюсь...');
-        // Введите свой надежный пароль два раза вместо "YourPassword123"
+      if (!isRegistered) {
+        isRegistered = true;
+        console.log('---> Обнаружен запрос регистрации! Регистрируюсь...');
+        
+        // ВАЖНО: Замените YourPassword123 на ваш пароль (вводится два раза через пробел)
         bot.chat('/reg YourPassword123 YourPassword123'); 
+        
+        // Включаем физику обратно только ПОСЛЕ успешной отправки команды
+        setTimeout(() => {
+          bot.physicsEnabled = true;
+          console.log('Бот успешно отправил команду регистрации и активировал физику.');
+        }, 1500);
       }
-    }
-    
-    // Если сервер просит войти (на случай, если бот УЖЕ зарегистрирован на сервере)
-    if (message.includes('/login') || message.includes('авторизуйтесь') || message.includes('войдите')) {
-      if (!isAuthorized) {
-        isAuthorized = true;
-        console.log('Бот уже зарегистрирован. Ввожу пароль для входа...');
-        bot.chat('/login YourPassword123');
-      }
-    }
-
-    // Логирование успешного входа
-    if (message.includes('успешно') || message.includes('success') || message.includes('Logged in')) {
-      console.log('Бот успешно авторизовался и готов к работе!');
     }
   });
 
-  // Спавн бота
   bot.once('spawn', () => {
-    console.log('Бот Bot240 заспавнился на сервере litesnp.mcsh.io!');
+    console.log('Бот подключился к серверу litesnp.mcsh.io. Ожидание пакета регистрации...');
   });
 
-  // Авто-перезаход: если сервер рестартнется, бот сам зайдет через 10 секунд
+  // Авторестарт при дисконнекте
   bot.on('end', () => {
-    console.log('Бот отключился. Мягкий перезапуск через 10 секунд...');
-    isAuthorized = false; // сбрасываем флаг при перезаходе
+    console.log('Бот отключился от сервера. Перезапуск через 10 секунд...');
+    isRegistered = false;
     setTimeout(startBot, 10000);
   });
 
-  // Ловим ошибки сети, чтобы хостинг не падал
   bot.on('error', (err) => {
-    console.log('Игнорируем ошибку подключения:', err.message);
+    console.log('Сетевая ошибка Mineflayer:', err.message);
   });
 }
 
-// Запуск бесконечного цикла бота
 startBot();
 
-// Удерживаем процесс для Render, чтобы статус всегда оставался Live
+// Анти-сон для хостинга
 setInterval(() => {}, 1000 * 60 * 60);
