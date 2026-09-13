@@ -1,34 +1,48 @@
-const mineflayer = require('mineflayer')
+const mineflayer = require('mineflayer');
+
+// Настройки подключения бота под твой сервер
+const botOptions = {
+  host: 'verdictsmp.mcsh.io',
+  port: 25565,
+  username: 'Bot240',
+  version: '1.21.1', // Жестко фиксируем версию под Purpur 1.21.1
+  
+  // --- ЗАЩИТА ОТ EXIT CODE 228 (ОПТИМИЗАЦИЯ ДЛЯ BOT-HOSTING.COM) ---
+  hideErrors: true,           // Отключает спам ошибок в консоль хостинга
+  loadInternalPlugins: false  // Выключает тяжелые физические плагины mineflayer для экономии ОЗУ
+};
 
 function createBot() {
-  const bot = mineflayer.createBot({
-    host: 'verdictsmp.mcsh.io',    // Сюда впиши IP сервера от MCServerHost (без двоеточия и порта)
-    port: 25565,                   // Сюда впиши цифры порта (которые после двоеточия)
-    username: 'Bot240',    // Ник твоего бота. Зайди под ним сам один раз и пропиши /reg!
-    version: '1.21.1'                // Версия твоего сервера
-  })
+  const bot = mineflayer.createBot(botOptions);
 
-  bot.on('spawn', () => {
-    console.log('Бот успешно зашел на сервер!')
-    
-    // Ждем 3 секунды, пока сервер прогрузит бота, и вводим пароль от авторизации
-    setTimeout(() => { 
-      bot.chat('/login bot1203') // Замени ТВОЙ_ПАРОЛЬ_ОТ_БОТА на настоящий пароль
-    }, 3000)
-    
-    // Еще через 2 секунды пишем команду /afk, чтобы бот стоял на месте
-    setTimeout(() => { 
-      bot.chat('/afk') 
-    }, 5000)
-  })
+  // Скрипт очистки памяти: заставляем бота мгновенно забывать чанки от плагина Chunky
+  bot.on('inject_allowed', () => {
+    if (bot.world) {
+      bot.world.getColumns = () => [];
+    }
+  });
 
-  // Анти-вылет: если бот потеряет интернет или его кикнет, он сам перезайдет через 10 секунд
+  // Действия при успешном заходе на сервер
+  bot.once('spawn', () => {
+    console.log('Бот Bot240 успешно зашел на verdictsmp.mcsh.io!');
+    
+    // Автоматически выдаем боту креатив при каждом заходе (чтобы не кикало за АФК)
+    setTimeout(() => {
+      bot.chat('/gamemode creative');
+    }, 2000); // Небольшая задержка в 2 секунды перед отправкой команды
+  });
+
+  // Защита от рестартов сервера (авто-перезаход через 10 секунд при вылете)
   bot.on('end', () => {
-    console.log('Бот отключен от сервера. Перезапуск через 10 секунд...')
-    setTimeout(createBot, 10000)
-  })
+    console.log('Бот отключился от сервера. Перезапуск процесса через 10 секунд...');
+    setTimeout(createBot, 10000);
+  });
 
-  bot.on('error', (err) => console.log('Ошибка бота: ', err))
+  // Ловим сетевые ошибки, чтобы бот не крашился в консоли
+  bot.on('error', (err) => {
+    console.log('Сетевая ошибка бота (игнорируется):', err.message);
+  });
 }
 
-createBot()
+// Запуск бота
+createBot();
