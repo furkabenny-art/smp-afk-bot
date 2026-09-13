@@ -1,12 +1,11 @@
 {
-  "name": "afk-bot",
+  "name": "litesmp-bot",
   "version": "1.0.0",
-  "description": "AFK Bot для LiteSMP",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "mineflayer": "^4.24.0"
+    "mineflayer": "4.24.0"
   }
 }
