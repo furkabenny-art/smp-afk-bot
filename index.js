@@ -11,18 +11,18 @@ process.on('uncaughtException', (err) => {
 
 // Настройки подключения (Адаптировано под одиночный мир)
 const botOptions = {
-  host: 'litesmp.mcsh.io',
+  host: 'litesnp.mcsh.io',
   port: 25565,
   username: 'Bot240',
   version: '1.21.1',
   hideErrors: true,
-  physicsEnabled: false, // Отключаем физику до регистрации, чтобы сервер не кикал за рассинхрон
+  physicsEnabled: false, // Отключаем физику до логина, чтобы сервер не кикал за рассинхрон
   viewDistance: 'tiny'   // Минимальная прорисовка для экономии ОЗУ на bot-hosting.com
 };
 
 function startBot() {
   const bot = mineflayer.createBot(botOptions);
-  let isRegistered = false;
+  let isAuthorized = false;
 
   // Очистка чанков для жесткой экономии ОЗУ
   bot.on('inject_allowed', () => {
@@ -31,33 +31,33 @@ function startBot() {
     }
   });
 
-  // Моментальная реакция на чат регистрации
+  // Моментальная реакция на чат авторизации
   bot.on('messagestr', (message) => {
-    if (message.includes('/reg') || message.includes('зарегистрируйтесь') || message.includes('register')) {
-      if (!isRegistered) {
-        isRegistered = true;
-        console.log('---> Обнаружен запрос регистрации! Регистрируюсь...');
+    if (message.includes('/login') || message.includes('авторизуйтесь') || message.includes('войдите')) {
+      if (!isAuthorized) {
+        isAuthorized = true;
+        console.log('---> Обнаружен запрос авторизации! Ввожу пароль...');
         
-        // ВАЖНО: Замените YourPassword123 на ваш пароль (вводится два раза через пробел)
-        bot.chat('/reg YourPassword123 YourPassword123'); 
+        // ВАЖНО: Замените YourPassword123 на ваш настоящий пароль от аккаунта!
+        bot.chat('/login YourPassword123'); 
         
-        // Включаем физику обратно только ПОСЛЕ успешной отправки команды
+        // Включаем физику обратно только ПОСЛЕ успешного логина
         setTimeout(() => {
           bot.physicsEnabled = true;
-          console.log('Бот успешно отправил команду регистрации и активировал физику.');
+          console.log('Бот успешно ввел пароль и активировал физику.');
         }, 1500);
       }
     }
   });
 
   bot.once('spawn', () => {
-    console.log('Бот подключился к серверу litesnp.mcsh.io. Ожидание пакета регистрации...');
+    console.log('Бот подключился к серверу litesnp.mcsh.io. Ожидание пакета авторизации...');
   });
 
   // Авторестарт при дисконнекте
   bot.on('end', () => {
     console.log('Бот отключился от сервера. Перезапуск через 10 секунд...');
-    isRegistered = false;
+    isAuthorized = false;
     setTimeout(startBot, 10000);
   });
 
