@@ -1,48 +1,36 @@
 const mineflayer = require('mineflayer');
 
-// Настройки подключения бота под твой сервер
-const botOptions = {
+const bot = mineflayer.createBot({
   host: 'verdictsmp.mcsh.io',
   port: 25565,
   username: 'Bot240',
-  version: '1.21.1', // Жестко фиксируем версию под Purpur 1.21.1
+  version: '1.21.1',
+  hideErrors: true
+});
+
+// Безопасный способ отключить сохранение чанков, чтобы не забивать ОЗУ хостинга
+bot.on('inject_allowed', () => {
+  if (bot.world && bot.world.getColumns) {
+    bot.world.getColumns = () => [];
+  }
+});
+
+// При успешном заходе в мир
+bot.once('spawn', () => {
+  console.log('Бот зашел на verdictsmp.mcsh.io!');
   
-  // --- ЗАЩИТА ОТ EXIT CODE 228 (ОПТИМИЗАЦИЯ ДЛЯ BOT-HOSTING.COM) ---
-  hideErrors: true,           // Отключает спам ошибок в консоль хостинга
-  loadInternalPlugins: false  // Выключает тяжелые физические плагины mineflayer для экономии ОЗУ
-};
+  // Автоматически пишем /gamemode creative через 3 секунды
+  setTimeout(() => {
+    bot.chat('/gamemode creative');
+  }, 3000);
+});
 
-function createBot() {
-  const bot = mineflayer.createBot(botOptions);
+// Если бота кикнуло — этот простой скрипт просто перезапустит сам файл
+bot.on('end', () => {
+  console.log('Отключение от сервера. Перезапуск...');
+  process.exit(0); // Хостинг сам автоматически поднимет бота заново при выходе процесса
+});
 
-  // Скрипт очистки памяти: заставляем бота мгновенно забывать чанки от плагина Chunky
-  bot.on('inject_allowed', () => {
-    if (bot.world) {
-      bot.world.getColumns = () => [];
-    }
-  });
-
-  // Действия при успешном заходе на сервер
-  bot.once('spawn', () => {
-    console.log('Бот Bot240 успешно зашел на verdictsmp.mcsh.io!');
-    
-    // Автоматически выдаем боту креатив при каждом заходе (чтобы не кикало за АФК)
-    setTimeout(() => {
-      bot.chat('/gamemode creative');
-    }, 2000); // Небольшая задержка в 2 секунды перед отправкой команды
-  });
-
-  // Защита от рестартов сервера (авто-перезаход через 10 секунд при вылете)
-  bot.on('end', () => {
-    console.log('Бот отключился от сервера. Перезапуск процесса через 10 секунд...');
-    setTimeout(createBot, 10000);
-  });
-
-  // Ловим сетевые ошибки, чтобы бот не крашился в консоли
-  bot.on('error', (err) => {
-    console.log('Сетевая ошибка бота (игнорируется):', err.message);
-  });
-}
-
-// Запуск бота
-createBot();
+bot.on('error', (err) => {
+  console.log('Игнорируемая сетевая ошибка:', err.message);
+});
