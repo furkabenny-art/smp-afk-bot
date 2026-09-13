@@ -1,0 +1,1 @@
+# smp-afk-bot
