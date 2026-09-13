@@ -9,9 +9,9 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-// Настройки подключения
+// Настройки подключения (ИЗМЕНЕН IP)
 const botOptions = {
-  host: 'verdictsmp.mcsh.io',
+  host: 'litesnp.mcsh.io',
   port: 25565,
   username: 'Bot240',
   version: '1.21.1',
@@ -21,7 +21,7 @@ const botOptions = {
 function startBot() {
   const bot = mineflayer.createBot(botOptions);
 
-  // Флаг, чтобы бот не пытался выдать себе креатив несколько раз за одну сессию
+  // Флаг, чтобы бот не регистрировался повторно во время одной сессии
   let isAuthorized = false;
 
   // Блокируем кэш чанков плагина Chunky, чтобы экономить ОЗУ
@@ -31,46 +31,46 @@ function startBot() {
     }
   });
 
-  // Умная авторизация через отслеживание строк чата
+  // Умная регистрация и авторизация через отслеживание строк чата
   bot.on('messagestr', (message) => {
-    // Если сервер просит войти, вводим пароль
-    if (message.includes('/login') || message.includes('авторизуйтесь') || message.includes('войдите')) {
-      console.log('AuthMe запросил авторизацию. Ввожу пароль...');
-      bot.chat('/login bot1203');
-    }
-    
-    // Если AuthMe написал, что мы успешно вошли
-    if (message.includes('успешно') || message.includes('success') || message.includes('Logged in')) {
+    // Если сервер просит зарегистрироваться
+    if (message.includes('/reg') || message.includes('зарегистрируйтесь') || message.includes('register')) {
       if (!isAuthorized) {
         isAuthorized = true;
-        console.log('Успешный логин! Запрашиваю гейммод через 2 секунды...');
-        setTimeout(() => bot.chat('/gamemode creative'), 2000);
+        console.log('AuthMe запросил регистрацию. Регистрируюсь...');
+        // Введите свой надежный пароль два раза вместо "YourPassword123"
+        bot.chat('/reg YourPassword123 YourPassword123'); 
       }
+    }
+    
+    // Если сервер просит войти (на случай, если бот УЖЕ зарегистрирован на сервере)
+    if (message.includes('/login') || message.includes('авторизуйтесь') || message.includes('войдите')) {
+      if (!isAuthorized) {
+        isAuthorized = true;
+        console.log('Бот уже зарегистрирован. Ввожу пароль для входа...');
+        bot.chat('/login YourPassword123');
+      }
+    }
+
+    // Логирование успешного входа
+    if (message.includes('успешно') || message.includes('success') || message.includes('Logged in')) {
+      console.log('Бот успешно авторизовался и готов к работе!');
     }
   });
 
   // Спавн бота
   bot.once('spawn', () => {
-    console.log('Бот Bot240 заспавнился на сервере!');
-    
-    // Если за 3 секунды сервер НЕ попросил написать /login (значит сработала сессия по IP)
-    setTimeout(() => {
-      if (!isAuthorized) {
-        isAuthorized = true;
-        console.log('Похоже, сработала авто-авторизация по IP. Запрашиваю гейммод...');
-        bot.chat('/gamemode creative');
-      }
-    }, 3000);
+    console.log('Бот Bot240 заспавнился на сервере litesnp.mcsh.io!');
   });
 
-  // Идеальный авто-перезаход: если сервер рестартнется, бот сам зайдет через 10 секунд
+  // Авто-перезаход: если сервер рестартнется, бот сам зайдет через 10 секунд
   bot.on('end', () => {
     console.log('Бот отключился. Мягкий перезапуск через 10 секунд...');
     isAuthorized = false; // сбрасываем флаг при перезаходе
     setTimeout(startBot, 10000);
   });
 
-  // Ловим ошибки сети, чтобы хостинг не падал в ошибку
+  // Ловим ошибки сети, чтобы хостинг не падал
   bot.on('error', (err) => {
     console.log('Игнорируем ошибку подключения:', err.message);
   });
