@@ -14,7 +14,7 @@ const botOptions = {
   host: 'happsmp.mcsh.io',
   port: 25565,
   username: 'Bot240',
-  version: '1.21.1',
+  version: '1.21',
   hideErrors: true,
   physicsEnabled: false, // Отключаем физику до логина, чтобы сервер не кикал за рассинхрон
   viewDistance: 'tiny'   // Минимальная прорисовка для экономии ОЗУ на bot-hosting.com
