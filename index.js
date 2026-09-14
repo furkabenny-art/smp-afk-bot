@@ -11,7 +11,7 @@ process.on('uncaughtException', (err) => {
 
 // Настройки подключения (Адаптировано под одиночный мир)
 const botOptions = {
-  host: 'litesnp.mcsh.io',
+  host: 'happsmp.mcsh.io',
   port: 25565,
   username: 'Bot240',
   version: '1.21.1',
